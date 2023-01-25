@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+    apache:
+        build: 
+            context: .
+            dockerfile: ./.docker/dev/DockerFile
+        container_name: "lar-pusher"             
+        volumes:  
+            - .:/var/www/html/laravel-pusher
+            - .:/development/laravel-pusher          
+            - ~/.composer/composer-cache:/root/.composer/cache
+        env_file: .env
+        environment:
+            VIRTUAL_HOST: larpusher.localhost
+            VIRTUAL_PORT: 80
+        entrypoint:
+            - /var/www/html/laravel-pusher/docker-setup.sh        
+        networks:
+            - frontend
+            - backend
+        healthcheck:
+            test: ps aux | grep 'apache2' || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+networks:
+  frontend:
+    external:
+      name: intellidev-frontend
+  backend:
+    external:
+      name: intellidev-backend
+  support:
+    external:
+      name: intellidev-support

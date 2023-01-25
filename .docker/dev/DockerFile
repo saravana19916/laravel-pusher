@@ -1,0 +1,87 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y software-properties-common 
+
+RUN LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
+
+RUN apt-get update -y && apt-get install -y apache2
+
+RUN apt-get install -y php7.2 \
+    php7.2-cli \
+    php7.2-common \
+    # php7.2-fpm \
+    php7.2-mysql \
+    php7.2-dom \
+    php7.2-simplexml \
+    php7.2-ssh2 \ 
+    php7.2-xml \
+    php7.2-xmlreader \
+    php7.2-curl \
+    php7.2-exif \
+    php7.2-ftp \
+    php7.2-gd \
+    php7.2-iconv \
+    php7.2-imagick \
+    php7.2-json \
+    php7.2-mbstring \
+    php7.2-posix \
+    php7.2-sockets \
+    php7.2-tokenizer \
+    php7.2-mysqli \
+    php7.2-pdo \
+    php7.2-sqlite3 \
+    php7.2-ctype \  
+    php7.2-fileinfo \
+    php7.2-zip  \
+    php7.2-exif \
+    libapache2-mod-php7.2 \
+    php7.2-mcrypt \
+    php7.2-mysql \
+    php7.2-memcache \
+    php7.2-dev \
+    php7.2-imagick
+
+RUN apt-get update && apt-get install -y vim \
+sudo \
+curl \
+locales 
+
+
+# Update apache.conf
+RUN sed -i '/Global configuration/a \
+ServerName localhost \
+' /etc/apache2/apache2.conf
+
+# Update status.conf
+RUN sed -i 's/Require local/RewriteEngine Off\n\t\tRequire all granted\n\t\t#Require local/g' /etc/apache2/mods-available/status.conf
+
+
+# Install and enable REDIS
+RUN pecl install -o -f redis \
+    && rm -rf /tmp/pear \
+    && echo "extension=redis.so" >> /etc/php/7.2/apache2/php.ini
+    # && docker-php-ext-enable redis --ini-name 10-docker-php-ext-redis.ini
+
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+
+RUN mv composer.phar /usr/local/bin/composer
+
+RUN composer self-update --1
+
+RUN locale-gen en_US.UTF-8 en_GB.UTF-8 de_DE.UTF-8 es_ES.UTF-8 fr_FR.UTF-8 it_IT.UTF-8 km_KH sv_SE.UTF-8 fi_FI.UTF-8
+
+RUN a2enmod rewrite expires
+
+#*****************START FOR DEV******************
+COPY ./.docker/dev/etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf 
+
+#*****************END FOR DEV********************
+# apachectl -D FOREGROUND
+WORKDIR /var/www/html/loyaltyone-ramsay
+# RUN rm index.html
+
+EXPOSE 80 443
